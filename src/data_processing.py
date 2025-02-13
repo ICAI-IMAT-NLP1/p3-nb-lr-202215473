@@ -18,8 +18,11 @@ def read_sentiment_examples(infile: str) -> List[SentimentExample]:
     Returns:
         A list of SentimentExample objects parsed from the file.
     """
-    # TODO: Open the file, go line by line, separate sentence and label, tokenize the sentence and create SentimentExample object
-    examples: List[SentimentExample] = None
+    # Open the file, go line by line, separate sentence and label, tokenize the sentence and create SentimentExample object
+    with open(infile, 'r') as file:
+        lines: List[str] = file.readlines()
+    sentence_value: List[List[str, int]] = [line.rsplit(sep="\t", maxsplit=1) for line in lines]  # last element separated by "\t" is the value
+    examples: List[SentimentExample] = [SentimentExample(tokenize(sentence.lower()), value) for sentence, value in sentence_value]
     return examples
 
 
@@ -35,9 +38,14 @@ def build_vocab(examples: List[SentimentExample]) -> Dict[str, int]:
     Returns:
         Dict[str, int]: A dictionary representing the vocabulary, where each word is mapped to a unique index.
     """
-    # TODO: Count unique words in all the examples from the training set
-    vocab: Dict[str, int] = None
-
+    # Count unique words in all the examples from the training set
+    unique_words = []
+    for sent_example in examples:
+        unique_words += [word for word in sent_example.words if word not in unique_words]
+    
+    vocab: Dict[str, int] = {}
+    for i in range(len(unique_words)):
+        vocab[unique_words[i]] = i
     return vocab
 
 
@@ -56,7 +64,10 @@ def bag_of_words(
     Returns:
         torch.Tensor: A tensor representing the bag-of-words vector.
     """
-    # TODO: Converts list of words into BoW, take into account the binary vs full
-    bow: torch.Tensor = None
-
+    if binary:
+        bow: torch.Tensor = torch.tensor([1 if word in text else 0 for word in list(vocab)])
+    else:
+        bow: torch.Tensor = torch.zeros((len(vocab)))
+        for word, idx in vocab.items():
+            bow[idx] += 1 if word in text else 0
     return bow
