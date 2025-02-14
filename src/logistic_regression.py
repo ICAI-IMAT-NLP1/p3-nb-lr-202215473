@@ -43,14 +43,12 @@ class LogisticRegression:
             predictions = self.predict(features)  # y_hat
             loss = self.binary_cross_entropy_loss(predictions, labels)
             gradients = torch.matmul(torch.cat((bias, features), dim=1).T, (predictions - labels)) / labels.shape[0]
-            print(predictions)
-            # We want self.sigmoid(torch.dot(self.weights, features)) closer to 1 as possible
-            # gradients = torch.matmul(torch.tensor((predictions - labels) / labels.shape[0]), features)
+
             self._weights -= learning_rate * gradients
             # print(self.weights)
             if i%20 == 0:
                 print("Loss = ", loss)
-            print("Weights = ", self.weights)
+            # print("Weights = ", self.weights)
 
         return
 
@@ -104,8 +102,8 @@ class LogisticRegression:
         Returns:
             torch.Tensor: Initialized weights as a tensor with size (dim + 1,).
         """
-        torch.manual_seed(random_state)
-        params: torch.Tensor = torch.zeros(dim)
+        generator = torch.manual_seed(random_state)
+        params: torch.Tensor = torch.randn(dim, generator=generator)
         # print(params)  # To check their value
         return params
 
