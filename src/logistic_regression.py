@@ -32,7 +32,26 @@ class LogisticRegression:
         Returns:
             None: The function updates the model weights in place.
         """
-        # TODO: Implement gradient-descent algorithm to optimize logistic regression weights
+        # Implement gradient-descent algorithm to optimize logistic regression weights
+        self._weights = self.initialize_parameters(features.shape[1]+1, self.random_state)  # esto parece estar bien
+
+        bias = torch.ones((features.shape[0], 1), dtype=torch.float32)
+        # features = torch.cat((bias, features), dim=1)
+        # predictions: torch.Tensor = None
+        for i in range(epochs):
+            # logits = torch.matmul(self._weights, features)
+            predictions = self.predict(features)  # y_hat
+            loss = self.binary_cross_entropy_loss(predictions, labels)
+            gradients = torch.matmul(torch.cat((bias, features), dim=1).T, (predictions - labels)) / labels.shape[0]
+            print(predictions)
+            # We want self.sigmoid(torch.dot(self.weights, features)) closer to 1 as possible
+            # gradients = torch.matmul(torch.tensor((predictions - labels) / labels.shape[0]), features)
+            self._weights -= learning_rate * gradients
+            # print(self.weights)
+            if i%20 == 0:
+                print("Loss = ", loss)
+            print("Weights = ", self.weights)
+
         return
 
     def predict(self, features: torch.Tensor, cutoff: float = 0.5) -> torch.Tensor:
@@ -46,7 +65,8 @@ class LogisticRegression:
         Returns:
             torch.Tensor: Predicted class labels (0 or 1).
         """
-        decisions: torch.Tensor = None
+        probabilities: torch.Tensor = self.predict_proba(features)
+        decisions: torch.Tensor = (probabilities >= cutoff).float()
         return decisions
 
     def predict_proba(self, features: torch.Tensor) -> torch.Tensor:
@@ -64,9 +84,10 @@ class LogisticRegression:
         """
         if self.weights is None:
             raise ValueError("Model not trained. Call the 'train' method first.")
-        
-        probabilities: torch.Tensor = None
-        
+
+        bias = torch.ones((features.shape[0], 1), dtype=torch.float32)
+        features = torch.cat((bias, features), dim=1)
+        probabilities: torch.Tensor = self.sigmoid(torch.matmul(features, self._weights))
         return probabilities
 
     def initialize_parameters(self, dim: int, random_state: int) -> torch.Tensor:
@@ -84,9 +105,8 @@ class LogisticRegression:
             torch.Tensor: Initialized weights as a tensor with size (dim + 1,).
         """
         torch.manual_seed(random_state)
-        
-        params: torch.Tensor = None
-        
+        params: torch.Tensor = torch.zeros(dim)
+        # print(params)  # To check their value
         return params
 
     @staticmethod
@@ -103,7 +123,8 @@ class LogisticRegression:
         Returns:
             torch.Tensor: The sigmoid of z.
         """
-        result: torch.Tensor = None
+        result: torch.Tensor = torch.sigmoid(z)
+        # result: torch.Tensor = 1 / (1 + torch.exp(-z))
         return result
 
     @staticmethod
@@ -123,7 +144,11 @@ class LogisticRegression:
         Returns:
             torch.Tensor: The computed binary cross-entropy loss.
         """
-        ce_loss: torch.Tensor = None
+        # ce_loss: torch.Tensor = torch.dot(-(1/targets.shape[0]),torch.sum(torch.dot(targets, torch.log(predictions)) + torch.dot(1-targets, torch.log(1-predictions))))
+        # ce_loss: torch.Tensor = -torch.mean(torch.sum(torch.dot(targets, torch.log(predictions+1e-2)) + torch.dot(1-targets, torch.log(1-predictions+1e-2))))
+        # ce_loss: torch.Tensor = -torch.mean(targets * torch.log(predictions+1e-2) + (1-targets) * torch.log(1-predictions+1e-2))
+        # ce_loss: torch.Tensor = -torch.mean(torch.sum(torch.matmul(targets, torch.log(torch.clamp(predictions, min=1e-2))) + torch.matmul(1-targets, torch.log(torch.clamp(1-predictions, min=1e-2)))))
+        ce_loss = -torch.mean(targets * torch.log(torch.clamp(predictions, min=1e-7)) + (1 - targets) * torch.log(torch.clamp(1 - predictions, min=1e-7)))
         return ce_loss
 
     @property

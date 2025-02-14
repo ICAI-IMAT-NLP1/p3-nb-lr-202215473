@@ -19,10 +19,12 @@ def read_sentiment_examples(infile: str) -> List[SentimentExample]:
         A list of SentimentExample objects parsed from the file.
     """
     # Open the file, go line by line, separate sentence and label, tokenize the sentence and create SentimentExample object
-    with open(infile, 'r') as file:
+    with open(infile, 'r', encoding="utf-8") as file:
         lines: List[str] = file.readlines()
     sentence_value: List[List[str, int]] = [line.rsplit(sep="\t", maxsplit=1) for line in lines]  # last element separated by "\t" is the value
-    examples: List[SentimentExample] = [SentimentExample(tokenize(sentence.lower()), value) for sentence, value in sentence_value]
+    examples: List[SentimentExample] = [SentimentExample(tokenize(sentence), int(value.strip())) for sentence, value in sentence_value]
+    for ex in examples:
+        print(ex)
     return examples
 
 
@@ -68,6 +70,8 @@ def bag_of_words(
         bow: torch.Tensor = torch.tensor([1 if word in text else 0 for word in list(vocab)])
     else:
         bow: torch.Tensor = torch.zeros((len(vocab)))
-        for word, idx in vocab.items():
-            bow[idx] += 1 if word in text else 0
+        # for word, idx in vocab.items():
+        for text_word in text:
+            if text_word in vocab.keys():
+                bow[vocab[text_word]] += 1
     return bow
